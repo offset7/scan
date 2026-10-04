@@ -57,6 +57,30 @@ const XAI_GROK_MODELS = [
   },
 ];
 
+// GLM Coding Plan models documented for Claude Code. Z.ai has no model-listing
+// endpoint on its Anthropic-compatible route, so these are suggestions and the
+// text input still accepts any exact model ID enabled for the plan.
+const ZAI_GLM_MODELS = [
+  {
+    id: 'glm-5.3',
+    label: 'GLM-5.3',
+    thinkingEfforts: ['low', 'medium', 'high'],
+    isDefault: true,
+  },
+  {
+    id: 'glm-5.3-flash',
+    label: 'GLM-5.3-Flash',
+    thinkingEfforts: ['low', 'medium', 'high'],
+    isDefault: false,
+  },
+  {
+    id: 'glm-5',
+    label: 'GLM-5',
+    thinkingEfforts: ['low', 'medium', 'high'],
+    isDefault: false,
+  },
+];
+
 function normalizedProvider(provider) {
   return `${provider || ''}`.trim().toLowerCase();
 }
@@ -138,6 +162,16 @@ export function modelCatalogEntry(provider, catalog) {
       input: 'text',
       models: XAI_GROK_MODELS,
       defaultModel: 'grok-4.6',
+      status: 'ready',
+    };
+  }
+
+  if (provider === 'zai') {
+    return {
+      provider,
+      input: 'text',
+      models: ZAI_GLM_MODELS,
+      defaultModel: 'glm-5.3',
       status: 'ready',
     };
   }

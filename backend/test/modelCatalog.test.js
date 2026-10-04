@@ -244,6 +244,19 @@ test('DeepSeek requires an exact model from its refreshed catalog', () => {
   assert.equal(isCachedModel('deepseek', 'unlisted-model', catalog), false);
 });
 
+test('Z.ai suggests GLM Coding Plan models and accepts exact model IDs', () => {
+  const entry = buildModelCatalogResponse(['zai'], []).providers[0];
+
+  assert.equal(entry.provider, 'zai');
+  assert.equal(entry.input, 'text');
+  assert.equal(entry.status, 'ready');
+  assert.equal(entry.defaultModel, 'glm-5.3');
+  assert.deepEqual(
+    entry.models.map((model) => model.id),
+    ['glm-5.3', 'glm-5.3-flash', 'glm-5']
+  );
+});
+
 test('a last refresh error retains a previously valid cached catalog', () => {
   const catalog = {
     provider: 'codex',

@@ -12,12 +12,14 @@ const PROVIDER_ENV_KEYS = [
   'DEEPSEEK_API_KEY',
   'OPENROUTER_API_KEY',
   'XAI_API_KEY',
+  'ZAI_API_KEY',
   'OPEN_KRITT_CODEX_API_KEY_CONFIGURED',
   'OPEN_KRITT_OPENAI_API_KEY_CONFIGURED',
   'OPEN_KRITT_ANTHROPIC_API_KEY_CONFIGURED',
   'OPEN_KRITT_DEEPSEEK_API_KEY_CONFIGURED',
   'OPEN_KRITT_OPENROUTER_API_KEY_CONFIGURED',
   'OPEN_KRITT_XAI_API_KEY_CONFIGURED',
+  'OPEN_KRITT_ZAI_API_KEY_CONFIGURED',
   'OPEN_KRITT_CODEX_LOGIN_CONFIGURED',
   'CODEX_LOGIN_CONFIGURED',
 ];
@@ -74,6 +76,7 @@ test('configured provider checks accept local raw credentials', () => {
   assert.equal(isModelProviderConfigured('codex', { env }), true);
   assert.equal(isModelProviderConfigured('claude', { env }), false);
   assert.equal(isModelProviderConfigured('deepseek', { env: { DEEPSEEK_API_KEY: 'local-key' } }), true);
+  assert.equal(isModelProviderConfigured('zai', { env: { ZAI_API_KEY: 'local-key' } }), true);
 });
 
 test('model provider API exposes configured IDs and rejects unavailable scan providers', async (t) => {

@@ -45,9 +45,16 @@ export const PROVIDER_DEFINITIONS = {
     description: 'DeepSeek models through the Codex harness, with model discovery and API checks.',
     management: 'api_key',
   },
+  zai: {
+    label: 'Z.ai',
+    envKeys: ['ZAI_API_KEY'],
+    credentialLabel: 'Z.ai API key',
+    description: 'GLM Coding Plan models through the Claude Code harness.',
+    management: 'api_key',
+  },
 };
 
-const MANAGED_CREDENTIAL_PROVIDERS = new Set(['openrouter', 'xai', 'deepseek']);
+const MANAGED_CREDENTIAL_PROVIDERS = new Set(['openrouter', 'xai', 'deepseek', 'zai']);
 
 const MAX_CREDENTIAL_LENGTH = 16 * 1024;
 let writeQueue = Promise.resolve();

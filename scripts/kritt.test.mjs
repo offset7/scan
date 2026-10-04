@@ -34,6 +34,7 @@ ANTHROPIC_API_KEY=
 DEEPSEEK_API_KEY=
 OPENROUTER_API_KEY=
 XAI_API_KEY=
+ZAI_API_KEY=
 GITHUB_TOKEN=
 `;
 
@@ -257,7 +258,7 @@ test('setup stores a selected secret without printing it', async (t) => {
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['3', '1', '10'], secret: [secret] }),
+    prompter: answers({ ask: ['3', '1', '11'], secret: [secret] }),
   });
 
   assert.equal(parseEnv(await readFile(project.envFile, 'utf8')).CODEX_API_KEY, secret);
@@ -288,7 +289,7 @@ test('setup stores xAI in .env and the managed credential store', async (t) => {
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['8', '1', '10'], secret: [secret] }),
+    prompter: answers({ ask: ['8', '1', '11'], secret: [secret] }),
   });
 
   const env = parseEnv(await readFile(project.envFile, 'utf8'));
@@ -309,7 +310,7 @@ test('setup stores OpenRouter in .env and the managed credential store', async (
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['7', '1', '10'], secret: [secret] }),
+    prompter: answers({ ask: ['7', '1', '11'], secret: [secret] }),
   });
 
   const env = parseEnv(await readFile(project.envFile, 'utf8'));
@@ -322,6 +323,27 @@ test('setup stores OpenRouter in .env and the managed credential store', async (
   assert.doesNotMatch(io.output.text, new RegExp(secret));
 });
 
+test('setup stores Z.ai in .env and the managed credential store', async (t) => {
+  const project = await createProject(t);
+  const io = testIo();
+  const secret = 'zai-managed-secret';
+
+  await runSetup({
+    ...project,
+    io,
+    prompter: answers({ ask: ['9', '1', '11'], secret: [secret] }),
+  });
+
+  const env = parseEnv(await readFile(project.envFile, 'utf8'));
+  const store = JSON.parse(
+    await readFile(join(project.rootDir, '.data', 'engine', 'credentials', 'providers.json'), 'utf8')
+  );
+  assert.equal(env.ZAI_API_KEY, secret);
+  assert.equal(store.credentials.zai, secret);
+  assert.deepEqual(store.disabledEnvironmentProviders, []);
+  assert.doesNotMatch(io.output.text, new RegExp(secret));
+});
+
 test('setup stores DeepSeek in .env and the managed credential store', async (t) => {
   const project = await createProject(t);
   const io = testIo();
@@ -330,7 +352,7 @@ test('setup stores DeepSeek in .env and the managed credential store', async (t)
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['6', '1', '10'], secret: [secret] }),
+    prompter: answers({ ask: ['6', '1', '11'], secret: [secret] }),
   });
 
   const env = parseEnv(await readFile(project.envFile, 'utf8'));
@@ -399,7 +421,7 @@ test('guided Claude login uses the shared home monitored by Accounts', async (t)
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['2', '1', '10'] }),
+    prompter: answers({ ask: ['2', '1', '11'] }),
     runner,
   });
 
@@ -432,7 +454,7 @@ test('setup explains the optional GitHub token', async (t) => {
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['9', '3', '10'] }),
+    prompter: answers({ ask: ['10', '3', '11'] }),
   });
 
   assert.match(io.output.text, /private GitHub repositories/);
@@ -509,7 +531,7 @@ test('guided Docker login copies a host-owned auth file from an isolated contain
   await runSetup({
     ...project,
     io,
-    prompter: answers({ ask: ['1', '1', '10'] }),
+    prompter: answers({ ask: ['1', '1', '11'] }),
     runner,
   });
 
