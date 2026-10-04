@@ -5,8 +5,8 @@ import { DEFAULT_WORKFLOW_NAMES, DEFAULT_WORKFLOWS } from '../src/lib/defaultWor
 import { validateWorkflow } from '../src/lib/validation.js';
 
 test('ships valid default workflows', () => {
-  assert.deepEqual(DEFAULT_WORKFLOW_NAMES, ['external-flow-analysis', 'Cosmos ABCI Panic Halt Review']);
-  assert.equal(DEFAULT_WORKFLOWS.length, 2);
+  assert.deepEqual(DEFAULT_WORKFLOW_NAMES, ['external-flow-analysis', 'Cosmos ABCI Panic Halt Review', 'web-api-bug-bounty-hunt']);
+  assert.equal(DEFAULT_WORKFLOWS.length, 3);
 
   for (const workflow of DEFAULT_WORKFLOWS) {
     const validated = validateWorkflow({
@@ -62,4 +62,20 @@ test('ships the Cosmos ABCI panic review workflow', () => {
   assert.equal(workflow.levels[0].outputFormat.abci_method_name, 'string');
   assert.equal(workflow.levels[1].outputTable, 'workflows.vulnerabilities');
   assert.equal(workflow.levels[1].outputFormat.trigger_flow, 'array');
+});
+
+test('ships the web-api-bug-bounty-hunt workflow', () => {
+  const workflow = DEFAULT_WORKFLOWS.find(({ name }) => name === 'web-api-bug-bounty-hunt');
+
+  assert.ok(workflow, 'web-api-bug-bounty-hunt workflow exists');
+  assert.deepEqual(
+    workflow.levels.map((level) => level.depth),
+    [0, 1, 2]
+  );
+  assert.equal(workflow.levels[0].steps.length, 1);
+  assert.equal(workflow.levels[1].steps.length, 4);
+  assert.equal(workflow.levels[2].steps.length, 1);
+  assert.ok(workflow.levels.every((level) => level.multiOutput && !level.consumeAll));
+  assert.equal(workflow.levels[2].outputFormat.trigger_flow, 'array');
+  assert.equal(workflow.levels[2].outputTable, 'workflows.vulnerabilities');
 });

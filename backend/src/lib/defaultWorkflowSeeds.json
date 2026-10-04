@@ -143,5 +143,109 @@
         }
       }
     ]
+  },
+  {
+    "name": "web-api-bug-bounty-hunt",
+    "description": "High-impact reconnaissance and vulnerability hunting for web applications and APIs. Maps the attack surface, hunts critical vulnerability classes, and verifies findings with practical exploitation.",
+    "extra": [
+      {
+        "key": "target_scope",
+        "label": "Scope (domains/subdomains/paths)",
+        "type": "text"
+      },
+      {
+        "key": "authentication_type",
+        "label": "Authentication type (JWT/OAuth/API Key/Session/None)",
+        "type": "text"
+      },
+      {
+        "key": "in_scope_operations",
+        "label": "High-value operations to prioritize",
+        "type": "text"
+      }
+    ],
+    "levels": [
+      {
+        "depth": 0,
+        "steps": [
+          {
+            "name": "Reconnaissance and surface mapping",
+            "content": "You are performing reconnaissance on {{repo_full}} for bug bounty hunting.\n\nTarget scope: {{extra.target_scope}}\nAuthentication: {{extra.authentication_type}}\nHigh-value operations: {{extra.in_scope_operations}}\nConfiguration: {{configuration}}\n\nYour mission is to map the complete externally accessible attack surface:\n\n1. **Enumerate all API endpoints:**\n   - REST API paths (GET, POST, PUT, DELETE, PATCH, OPTIONS)\n   - GraphQL endpoints and introspection\n   - gRPC services exposed\n   - WebSocket connections\n   - File upload endpoints\n   - Webhook ingestion points\n   - Search/filtering endpoints\n   - Admin or internal APIs exposed\n\n2. **Identify entry points for each endpoint:**\n   - Authentication requirements (none/required/optional)\n   - Required parameters and their types\n   - Optional parameters that might bypass logic\n   - File upload restrictions\n   - Rate limiting evidence\n   - Response differences by auth state\n\n3. **Map data flows:**\n   - User input sources (query params, body fields, headers, cookies)\n   - Data destinations (database, external APIs, file system, logs)\n   - Sensitive data exposure points\n   - State mutation operations\n\n4. **Identify high-value targets:**\n   - Account manipulation endpoints\n   - Payment/billing operations\n   - Admin functions\n   - User data access methods\n   - Privilege escalation points\n   - Resource creation/deletion endpoints\n\nFor each significant API endpoint, provide:\n- Full path and HTTP method\n- Authentication requirement\n- Purpose/what it does\n- Key parameters and types\n- What data it returns\n- Why it's security-relevant for bug bounty"
+          }
+        ],
+        "consumeAll": false,
+        "isLastStep": false,
+        "multiOutput": true,
+        "outputTable": "workflows.step_results",
+        "outputFormat": {
+          "endpoint_path": "string",
+          "endpoint_method": "string",
+          "endpoint_purpose": "string",
+          "auth_requirement": "string",
+          "key_parameters": "array",
+          "data_returned": "string",
+          "bounty_relevance": "string",
+          "attack_surface": "string"
+        }
+      },
+      {
+        "depth": 1,
+        "steps": [
+          {
+            "name": "Hunt authentication and authorization flaws",
+            "content": "You are hunting authentication and authorization vulnerabilities in {{repo_full}}.\n\nEndpoint: {{endpoint_path}} ({{endpoint_method}})\nAuthentication type: {{extra.authentication_type}}\nPurpose: {{endpoint_purpose}}\nKey parameters: {{key_parameters}}\n\nInvestigate these specific attack vectors:\n\n1. **Authentication bypass:**\n   - Missing auth checks on sensitive endpoints\n   - Auth bypasses (null/empty tokens, invalid signatures accepted)\n   - Case-sensitivity or encoding tricks\n   - Header manipulation\n   - Cookie manipulation or predictable session IDs\n   - JWT validation flaws (algorithm confusion, kid parameter, missing verification)\n   - OAuth redirect vulnerabilities\n\n2. **Authorization flaws:**\n   - Privilege escalation through parameter manipulation\n   - Missing authorization on admin endpoints\n   - Horizontal privilege escalation (accessing other users' data)\n   - Role/permission bypass through direct endpoint access\n   - Insecure direct object references (IDORs) - change IDs in requests\n   - Missing ownership checks\n\n3. **Session management issues:**\n   - Predictable session tokens\n   - Session fixation\n   - Missing CSRF tokens or validation\n   - Cookie theft vectors\n\nFor each vulnerability found:\n- Describe the flaw and exact attack vector\n- State what auth check is missing or broken\n- Provide concrete exploitation steps\n- Estimate impact (unauthorized access, data breach, privilege escalation)"
+          },
+          {
+            "name": "Hunt injection and data exposure flaws",
+            "content": "You are hunting injection and data exposure vulnerabilities in {{repo_full}}.\n\nEndpoint: {{endpoint_path}} ({{endpoint_method}})\nPurpose: {{endpoint_purpose}}\nKey parameters: {{key_parameters}}\nData returned: {{data_returned}}\n\nInvestigate these attack vectors:\n\n1. **Input injection flaws:**\n   - SQL injection in filters, search, or sorting\n   - NoSQL injection (MongoDB, etc.)\n   - Command injection\n   - LDAP injection\n   - XML/XXE injection\n   - Path traversal in file endpoints\n   - Template injection\n   - Expression language injection\n\n2. **Data exposure:**\n   - Sensitive data in responses (API keys, tokens, credentials)\n   - Unencrypted sensitive fields\n   - Information disclosure through error messages\n   - PII exposed in list endpoints\n   - Private data accessible through IDOR\n   - Cache poisoning leading to data exposure\n   - Metadata leakage\n\n3. **API-specific flaws:**\n   - GraphQL depth/complexity attacks\n   - Batch operation abuse\n   - Mass assignment (setting fields that shouldn't be writable)\n   - Decimal/precision manipulation on prices/amounts\n   - Unicode/encoding bypasses\n\n4. **Response analysis:**\n   - Difference in behavior revealing internal logic\n   - Error message verbosity\n   - Timing-based information disclosure\n   - Response size differences\n\nFor each finding:\n- Injection type and vulnerable parameter\n- Payload that demonstrates the flaw\n- Data that can be accessed or modified\n- Business impact"
+          },
+          {
+            "name": "Hunt logic flaws and state manipulation",
+            "content": "You are hunting business logic flaws in {{repo_full}}.\n\nEndpoint: {{endpoint_path}} ({{endpoint_method}})\nPurpose: {{endpoint_purpose}}\nHigh-value operations: {{extra.in_scope_operations}}\n\nInvestigate these attack vectors:\n\n1. **Race conditions and timing flaws:**\n   - Double-spending exploits\n   - Race condition in purchase/transfer flows\n   - TOCTOU vulnerabilities\n   - Concurrent operation abuse (two simultaneous requests)\n   - Timing-based authentication bypass\n\n2. **Business logic flaws:**\n   - Price manipulation (negative amounts, decimals, currency confusion)\n   - Discount code abuse or unlimited reuse\n   - Bypass of payment requirements\n   - Unauthorized status changes\n   - Workflow state bypass\n   - Duplicate transaction handling\n   - Off-by-one errors in limits/quotas\n\n3. **Resource abuse:**\n   - No rate limiting on sensitive operations\n   - Resource exhaustion (file uploads, API calls)\n   - Infinite loop triggers\n   - Memory or CPU exhaustion\n   - Quota bypass\n   - Batch operation size limit bypass\n\n4. **Data consistency issues:**\n   - Stale data usage\n   - Missing validation of state assumptions\n   - Orphaned data creation\n   - Transaction atomicity bypass\n   - Rollback/undo abuse\n\n5. **Integration and third-party flaws:**\n   - Webhook manipulation\n   - IPN/webhook replay attacks\n   - Callback manipulation\n   - OAuth redirect abuse\n   - Payment gateway bypass\n\nFor each flaw:\n- Describe the broken assumption or missing check\n- Provide step-by-step exploitation\n- Quantify the business impact (money, data access, service disruption)"
+          },
+          {
+            "name": "Hunt API-specific and advanced flaws",
+            "content": "You are hunting advanced API vulnerabilities in {{repo_full}}.\n\nEndpoint: {{endpoint_path}} ({{endpoint_method}})\nPurpose: {{endpoint_purpose}}\n\nInvestigate these attack vectors:\n\n1. **HTTP method and request smuggling:**\n   - HTTP method override (X-HTTP-Method-Override, _method)\n   - Method-based auth bypass\n   - Verb tampering\n   - Request smuggling between client and server\n   - Content-Type confusion\n\n2. **API-specific issues:**\n   - Version confusion (API versioning bypass)\n   - Header injection and response splitting\n   - Charset/encoding bypass\n   - Accept-Language or localization bypass\n   - User-Agent or client-ID spoofing\n   - Missing security headers\n\n3. **Advanced data manipulation:**\n   - Polyglot payloads\n   - Type confusion exploits\n   - Object injection (PHP, Java serialization)\n   - Prototype pollution (JavaScript)\n   - Hidden field injection\n   - Extension-based bypass (.json vs .xml parsing)\n\n4. **Cryptographic and token flaws:**\n   - Weak token generation\n   - Token reuse across contexts\n   - Reversible/decryptable tokens\n   - Insufficient entropy\n   - Predictable values\n\n5. **Frontend-to-backend trust issues:**\n   - Client-side enforcement of limits\n   - Hidden field manipulation\n   - Duplicate submission detection bypass\n   - Anti-CSRF token predictability\n\nFor each finding:\n- Specific vulnerability type\n- Exploitation method\n- Measurable impact\n- Feasibility assessment"
+          }
+        ],
+        "consumeAll": false,
+        "isLastStep": false,
+        "multiOutput": true,
+        "outputTable": "workflows.step_results",
+        "outputFormat": {
+          "vulnerability_description": "string",
+          "affected_endpoint": "string",
+          "attack_vector": "string",
+          "proof_of_concept": "string",
+          "impact": "string",
+          "bounty_severity": "string",
+          "business_impact": "string"
+        }
+      },
+      {
+        "depth": 2,
+        "steps": [
+          {
+            "name": "Verify and exploit findings",
+            "content": "You are verifying and developing exploits for bug bounty findings in {{repo_full}}.\n\nFinding details:\n- Affected endpoint: {{affected_endpoint}}\n- Attack vector: {{attack_vector}}\n- Initial PoC: {{proof_of_concept}}\n- Impact: {{impact}}\n\nYour mission:\n\n1. **Verify the vulnerability is real:**\n   - Test the PoC against the actual code\n   - Confirm the vulnerability is not already patched\n   - Verify it's production-reachable\n   - Ensure it's not a test-only or development-only issue\n\n2. **Develop practical exploitation:**\n   - Write detailed exploitation steps\n   - Create ready-to-use payloads or scripts\n   - Provide curl/Python/JavaScript examples\n   - Include any required preconditions (account setup, timing, etc.)\n   - Test the exploit end-to-end\n\n3. **Quantify impact:**\n   - What data/functionality does attacker gain access to?\n   - How many users could be affected?\n   - What's the financial impact?\n   - Can this lead to account takeover, data theft, or service disruption?\n   - Is this chained with other vulnerabilities for greater impact?\n\n4. **Assess bounty value:**\n   - Severity: Critical/High/Medium/Low\n   - Is this a known class with a standard bounty or novel?\n   - Uniqueness and difficulty to find\n   - CVSS score if applicable\n   - Real-world impact demonstrated\n\n5. **Package for submission:**\n   - Clear title for the bug report\n   - Screenshots or video if applicable\n   - Full reproduction steps\n   - Impact statement\n   - Suggested fix\n   - Timeline recommendations\n\nReturn findings ready for submission to the bug bounty program."
+          }
+        ],
+        "consumeAll": false,
+        "isLastStep": true,
+        "multiOutput": true,
+        "outputTable": "workflows.vulnerabilities",
+        "outputFormat": {
+          "summary": "string",
+          "vulnerability_type": "string",
+          "malicious_actor": "string",
+          "explanation": "string",
+          "file_path": "string",
+          "line": "number",
+          "malicious_input_example": "string",
+          "trigger_flow": "array",
+          "exploitable": "boolean"
+        }
+      }
+    ]
   }
 ]
