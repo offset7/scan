@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.0](https://github.com/offset7/scan/compare/v1.4.1...v1.5.0) (2026-10-04)
+
+
+### Features
+
+* add Z.ai GLM Coding Plan provider ([5de6e0e](https://github.com/offset7/scan/commit/5de6e0ed8df6619fd869394899b6f383a9b9aabd))
+* add Z.ai GLM Coding Plan provider ([6769975](https://github.com/offset7/scan/commit/6769975047731268a7efe2a6c1db6fedabd2f8d5))
+
 ## [1.4.1](https://github.com/Kritt-ai/open-kritt/compare/v1.4.0...v1.4.1) (2026-08-16)
 
 
