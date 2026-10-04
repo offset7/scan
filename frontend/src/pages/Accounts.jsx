@@ -13,6 +13,7 @@ const PROVIDER_LINKS = {
   openrouter: 'https://openrouter.ai/settings/keys',
   xai: 'https://console.x.ai/',
   deepseek: 'https://platform.deepseek.com/api_keys',
+  zai: 'https://z.ai/manage-apikey/apikey-list',
 };
 
 const WEEKLY_WINDOW_MINUTES = 7 * 24 * 60;
@@ -512,7 +513,8 @@ export function removeProviderFromOverview(overview, providerId) {
 }
 
 function ProviderMark({ provider }) {
-  const label = { codex: 'CX', claude: 'CL', xai: 'XA', openrouter: 'OR', deepseek: 'DS' }[provider] || provider;
+  const label =
+    { codex: 'CX', claude: 'CL', xai: 'XA', openrouter: 'OR', deepseek: 'DS', zai: 'ZA' }[provider] || provider;
   return <span className={`mono account-provider-mark account-provider-mark-${provider}`}>{label}</span>;
 }
 

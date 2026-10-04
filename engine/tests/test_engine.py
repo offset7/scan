@@ -1484,6 +1484,73 @@ def test_claude_harness_can_route_glm_through_openrouter(monkeypatch, tmp_path):
     assert harnesses.claude_model_provider("glm-5.2", captured["env"]) == "openrouter"
 
 
+def test_claude_harness_routes_zai_coding_plan_to_fixed_endpoint(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run_process(cmd, prompt, cwd, timeout, env=None):
+        captured["cmd"] = cmd
+        captured["env"] = env
+        captured["timeout"] = timeout
+        return SimpleNamespace(
+            stdout=json.dumps(
+                {
+                    "result": {
+                        "structured_output": marked(
+                            {"stub": True, "stub_explanation": "No matching records.", "results": []}
+                        )
+                    },
+                    "usage": {"input_tokens": 1},
+                }
+            ),
+            stderr="",
+            returncode=0,
+        )
+
+    monkeypatch.setattr(harnesses, "_run_process", fake_run_process)
+
+    result = ClaudeHarness(timeout_seconds=5, model_provider="zai").run(
+        prompt="prompt",
+        schema=output_schema('{"thing":"string"}', multi_output=False),
+        repo_dir="/tmp",
+        model="glm-5.3",
+        thinking_effort="high",
+        env={
+            "HOME": str(tmp_path / "home"),
+            "CLAUDE_HOME": str(tmp_path / "home" / ".claude"),
+            "CLAUDE_CONFIG_DIR": str(tmp_path / "home" / ".claude"),
+            "ZAI_API_KEY": "zai-key",
+            # An operator-supplied endpoint must never receive the Z.ai key.
+            "ANTHROPIC_BASE_URL": "https://example.invalid",
+            "ANTHROPIC_API_KEY": "anthropic-key",
+        },
+    )
+
+    assert result.payload == marked({"stub": True, "stub_explanation": "No matching records.", "results": []})
+    assert captured["timeout"] == 5
+    assert captured["cmd"][captured["cmd"].index("--model") + 1] == "glm-5.3"
+    assert captured["env"]["ANTHROPIC_BASE_URL"] == "https://api.z.ai/api/anthropic"
+    assert captured["env"]["ANTHROPIC_AUTH_TOKEN"] == "zai-key"
+    assert captured["env"]["ANTHROPIC_API_KEY"] == ""
+    assert captured["env"]["API_TIMEOUT_MS"] == "3000000"
+    for key in harnesses.CLAUDE_OPENROUTER_MODEL_ENV_KEYS:
+        assert captured["env"][key] == "glm-5.3"
+    settings = json.loads(captured["cmd"][captured["cmd"].index("--settings") + 1])
+    assert settings == {"availableModels": ["glm-5.3"], "enforceAvailableModels": True, "model": "glm-5.3"}
+    assert captured["cmd"][captured["cmd"].index("--effort") + 1] == "high"
+    assert not any("zai-key" in part for part in captured["cmd"])
+
+
+def test_claude_harness_requires_zai_key_for_zai_provider(tmp_path):
+    with pytest.raises(harnesses.HarnessError, match="ZAI_API_KEY"):
+        ClaudeHarness(timeout_seconds=5, model_provider="zai").run(
+            prompt="prompt",
+            schema=output_schema('{"thing":"string"}', multi_output=False),
+            repo_dir="/tmp",
+            model="glm-5.3",
+            env={"HOME": str(tmp_path / "home")},
+        )
+
+
 def test_claude_openrouter_terminal_stream_error_rejects_partial_json(monkeypatch, tmp_path):
     payload = marked({"stub": True, "stub_explanation": "No matching records.", "results": []})
     raw_stdout = "\n".join(

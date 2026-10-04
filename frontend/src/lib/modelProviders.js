@@ -1,4 +1,4 @@
-export const MODEL_PROVIDER_IDS = ['codex', 'claude', 'openrouter', 'xai', 'deepseek'];
+export const MODEL_PROVIDER_IDS = ['codex', 'claude', 'openrouter', 'xai', 'deepseek', 'zai'];
 export const MODEL_CATALOG_STATUSES = ['ready', 'loading', 'unavailable'];
 const SAFE_MODEL_NOTE_URLS = new Set(['https://chatgpt.com/cyber']);
 
@@ -10,6 +10,8 @@ const PROVIDER_HARNESSES = {
   openrouter: ['claude-code', 'codex'],
   xai: ['grok-build'],
   deepseek: ['codex'],
+  // Z.ai's GLM Coding Plan is served through its Anthropic-compatible endpoint.
+  zai: ['claude-code'],
 };
 
 const PROVIDER_DEFAULT_MODELS = {
@@ -18,6 +20,7 @@ const PROVIDER_DEFAULT_MODELS = {
   openrouter: 'z-ai/glm-5.2',
   xai: 'grok-4.6',
   deepseek: 'deepseek-flash',
+  zai: 'glm-5.3',
 };
 
 const PROVIDER_THINKING_EFFORTS = {
@@ -26,6 +29,7 @@ const PROVIDER_THINKING_EFFORTS = {
   openrouter: ['default', 'low', 'medium', 'high', 'xhigh', 'max'],
   xai: ['low', 'medium', 'high', 'xhigh'],
   deepseek: ['low', 'high', 'max'],
+  zai: ['low', 'medium', 'high'],
 };
 
 const HARNESS_THINKING_EFFORTS = {
@@ -117,8 +121,7 @@ export function usesFreeTextModelInput(catalog, provider) {
   const normalizedProvider = normalizedProviderId(provider);
   const providerCatalog = modelCatalogForProvider(catalog, normalizedProvider);
   return (
-    providerCatalog?.input === 'text' ||
-    (!providerCatalog && (normalizedProvider === 'openrouter' || normalizedProvider === 'xai'))
+    providerCatalog?.input === 'text' || (!providerCatalog && ['openrouter', 'xai', 'zai'].includes(normalizedProvider))
   );
 }
 

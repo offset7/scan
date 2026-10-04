@@ -77,9 +77,9 @@ describe('configuredModelProviders', () => {
   it('uses only supported provider IDs returned by the API', () => {
     expect(
       configuredModelProviders({
-        providers: ['OPENROUTER', 'unknown', 'claude', 'codex', 'codex', 'xai', 'deepseek'],
+        providers: ['OPENROUTER', 'unknown', 'claude', 'codex', 'codex', 'xai', 'deepseek', 'ZAI'],
       })
-    ).toEqual(['codex', 'claude', 'openrouter', 'xai', 'deepseek']);
+    ).toEqual(['codex', 'claude', 'openrouter', 'xai', 'deepseek', 'zai']);
   });
 
   it('handles empty and malformed availability responses', () => {
@@ -95,6 +95,7 @@ describe('model provider defaults', () => {
     expect(defaultModelForModelProvider('openrouter')).toBe('z-ai/glm-5.2');
     expect(defaultModelForModelProvider('xai')).toBe('grok-4.6');
     expect(defaultModelForModelProvider('deepseek')).toBe('deepseek-flash');
+    expect(defaultModelForModelProvider('zai')).toBe('glm-5.3');
   });
 
   it('moves provider-owned model defaults with the provider', () => {
@@ -307,6 +308,13 @@ describe('model provider harnesses', () => {
   it('pairs xAI with the Grok Build harness', () => {
     expect(harnessesForModelProvider('xai')).toEqual(['grok-build']);
     expect(defaultHarnessForModelProvider('xai')).toBe('grok-build');
+  });
+
+  it('pairs Z.ai with the Claude Code harness and accepts exact GLM model IDs', () => {
+    expect(harnessesForModelProvider('zai')).toEqual(['claude-code']);
+    expect(defaultHarnessForModelProvider('zai')).toBe('claude-code');
+    expect(usesFreeTextModelInput({}, 'zai')).toBe(true);
+    expect(isModelSelectionValid('glm-5', {}, 'zai')).toBe(true);
   });
 
   it('pairs DeepSeek with the Codex harness', () => {

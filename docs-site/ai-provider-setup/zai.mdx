@@ -1,0 +1,45 @@
+---
+title: 'Z.ai (GLM Coding Plan)'
+description: 'Use a Z.ai GLM Coding Plan key to run GLM models through the Claude Code harness.'
+---
+
+The **Z.ai** provider uses `ZAI_API_KEY` and runs through the **Claude Code** harness
+against Z.ai's Anthropic-compatible endpoint, `https://api.z.ai/api/anthropic`. This is
+the integration Z.ai documents for the
+[GLM Coding Plan](https://docs.z.ai/devpack/tool/claude). It is available for scans and
+workflow and post-script drafts.
+
+1. Subscribe to a GLM Coding Plan, then create a key on the
+   [Z.ai API keys](https://z.ai/manage-apikey/apikey-list) page.
+2. Open **Accounts**. If Z.ai is hidden, select it under **Show or hide providers**.
+   Select **Add API key** on the Z.ai card, or run `./kritt setup` and choose
+   **Z.ai API key**.
+3. Create or duplicate a scan, choose **Z.ai**, then pick a GLM model. Claude Code is
+   selected as the compatible harness.
+
+## Models
+
+Z.ai's Anthropic-compatible route does not list models, so the picker suggests the
+Coding Plan models Z.ai currently documents and still accepts any exact model ID:
+
+| Model ID | Notes |
+| --- | --- |
+| `glm-5.3` | Default. |
+| `glm-5.3-flash` | Lighter GLM-5.3 variant. |
+| `glm-5` | [GLM-5](https://docs.z.ai/guides/llm/glm-5). Some plans may not include it. |
+
+Your plan decides which models you can use. If Z.ai rejects a model, pick another one
+or check your subscription.
+
+## Credentials and protocol
+
+Accounts stores the key in the protected provider credential file and mirrors changes to
+the project `.env` when that persistence path is configured. Keys are never returned
+to the browser. Saving a key does not contact Z.ai.
+
+For each Z.ai job the engine sets `ANTHROPIC_BASE_URL` to the fixed Z.ai endpoint,
+passes the key as `ANTHROPIC_AUTH_TOKEN`, clears `ANTHROPIC_API_KEY`, maps every Claude
+Code model slot (including subagents) to the selected GLM model, and raises
+`API_TIMEOUT_MS` as Z.ai recommends. An operator-supplied `ANTHROPIC_BASE_URL` is
+ignored for this provider, so the Z.ai key never goes to another endpoint. Claude
+subscription logins are not mounted into Z.ai jobs.

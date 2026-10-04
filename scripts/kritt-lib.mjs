@@ -13,17 +13,20 @@ export const PROVIDER_KEYS = [
   'DEEPSEEK_API_KEY',
   'OPENROUTER_API_KEY',
   'XAI_API_KEY',
+  'ZAI_API_KEY',
 ];
 export const CODEX_LOGIN_STATUS_KEY = 'CODEX_LOGIN_CONFIGURED';
 export const MANAGED_PROVIDER_ENV_KEYS = {
   deepseek: 'DEEPSEEK_API_KEY',
   openrouter: 'OPENROUTER_API_KEY',
   xai: 'XAI_API_KEY',
+  zai: 'ZAI_API_KEY',
 };
 export const MANAGED_PROVIDER_LABELS = {
   deepseek: 'DeepSeek API key',
   openrouter: 'OpenRouter API key',
   xai: 'xAI API key',
+  zai: 'Z.ai API key',
 };
 const MANAGED_ENV_KEY_TO_PROVIDER = Object.fromEntries(
   Object.entries(MANAGED_PROVIDER_ENV_KEYS).map(([provider, key]) => [key, provider])
@@ -73,6 +76,11 @@ export const ENVIRONMENT_ITEMS = [
     key: 'XAI_API_KEY',
     label: 'xAI API key',
     info: 'Used by the Grok Build harness via the xAI provider.',
+  },
+  {
+    key: 'ZAI_API_KEY',
+    label: 'Z.ai API key',
+    info: 'Used by the Claude Code harness with GLM Coding Plan models through the Z.ai Anthropic-compatible endpoint.',
   },
   {
     key: 'GITHUB_TOKEN',
@@ -1385,11 +1393,12 @@ export async function runSetup(options = {}) {
     write(context.io, '6) DeepSeek API key');
     write(context.io, '7) OpenRouter API key');
     write(context.io, '8) xAI API key');
-    write(context.io, '9) GitHub token');
-    write(context.io, '10) Finish setup');
+    write(context.io, '9) Z.ai API key');
+    write(context.io, '10) GitHub token');
+    write(context.io, '11) Finish setup');
     const choice = (await context.prompter.ask('Choose an item: ')).toLowerCase();
 
-    if (choice === '10' || choice === 'q' || choice === 'quit') break;
+    if (choice === '11' || choice === 'q' || choice === 'quit') break;
     if (choice === '1') {
       await manageCodexLogin(context);
       continue;

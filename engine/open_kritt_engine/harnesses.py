@@ -185,6 +185,10 @@ OPENROUTER_CURSOR_BASE_URL = "https://openrouter.ai/api/v1/cursor"
 OPENROUTER_CODEX_BASE_URL = "https://openrouter.ai/api/v1"
 DEEPSEEK_CODEX_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_CODEX_MODEL_CATALOG = "/app/open_kritt_engine/deepseek_models.json"
+# Z.ai's GLM Coding Plan endpoint for Claude Code. The base URL is fixed so a
+# ZAI_API_KEY is never sent to an operator-supplied ANTHROPIC_BASE_URL.
+ZAI_CLAUDE_BASE_URL = "https://api.z.ai/api/anthropic"
+ZAI_CLAUDE_API_TIMEOUT_MS = "3000000"
 OPENROUTER_MODEL_ALIASES = {
     "glm-5.2": "z-ai/glm-5.2",
     "grok-4.5": "x-ai/grok-4.5",
@@ -198,12 +202,15 @@ CLAUDE_OPENROUTER_MODEL_ENV_KEYS = (
     "ANTHROPIC_DEFAULT_HAIKU_MODEL",
     "CLAUDE_CODE_SUBAGENT_MODEL",
 )
+# Providers that route Claude Code through an API gateway with an API key
+# instead of an Anthropic login.
+CLAUDE_GATEWAY_PROVIDERS = frozenset({"openrouter", "zai"})
 CLAUDE_MODEL_ALIASES = {
     "opus-4.7": "claude-opus-4-7",
     "opus-4.8": "claude-opus-4-8",
 }
 DEFAULT_MODEL_PROVIDER = "openrouter"
-MODEL_PROVIDERS = {"codex", "claude", "openrouter", "xai", "deepseek"}
+MODEL_PROVIDERS = {"codex", "claude", "openrouter", "xai", "deepseek", "zai"}
 GROK_BUILD_THINKING_EFFORTS = frozenset({"low", "medium", "high", "xhigh"})
 DEFAULT_GROK_BUILD_MODEL = "grok-4.6"
 GROK_BUILD_RUNTIME_ENV = {
@@ -986,6 +993,7 @@ def _scan_docker_command(
         "ANTHROPIC_AUTH_TOKEN",
         "ANTHROPIC_API_KEY",
         *CLAUDE_OPENROUTER_MODEL_ENV_KEYS,
+        "API_TIMEOUT_MS",
         "CODEX_MODEL_PROVIDER",
         "CLAUDE_CODE_MODEL_PROVIDER",
         "CURSOR_API_KEY",
@@ -1121,8 +1129,8 @@ def claude_model_provider(
     model: str, env: dict[str, str] | None = None, model_provider: str | None = None
 ) -> str | None:
     requested_provider = normalize_model_provider(model_provider)
-    if requested_provider == "openrouter":
-        return "openrouter"
+    if requested_provider in CLAUDE_GATEWAY_PROVIDERS:
+        return requested_provider
     if requested_provider:
         return None
     actual_env = env or os.environ
@@ -1144,7 +1152,7 @@ def _claude_model_name(model: str, env: dict[str, str], model_provider: str | No
 
 def _apply_claude_host_auth_home(env: dict[str, str], provider: str | None) -> dict[str, str]:
     auth_home = env.get("ENGINE_CLAUDE_AUTH_HOME") or os.getenv("ENGINE_CLAUDE_AUTH_HOME")
-    if provider == "openrouter" or not auth_home or _env_enabled("ENGINE_CLAUDE_DOCKER_RUNNER"):
+    if provider in CLAUDE_GATEWAY_PROVIDERS or not auth_home or _env_enabled("ENGINE_CLAUDE_DOCKER_RUNNER"):
         return env
     actual_env = dict(env)
     auth_home = str(Path(auth_home).expanduser())
@@ -1163,7 +1171,17 @@ def _apply_claude_host_auth_home(env: dict[str, str], provider: str | None) -> d
 
 def _claude_env(env: dict[str, str], model: str, model_provider: str | None = None) -> dict[str, str]:
     actual_env = dict(env)
-    if claude_model_provider(model, actual_env, model_provider) == "openrouter":
+    provider = claude_model_provider(model, actual_env, model_provider)
+    if provider == "zai":
+        if not actual_env.get("ZAI_API_KEY"):
+            raise HarnessError("ZAI_API_KEY is required when model provider is zai")
+        actual_env["ANTHROPIC_BASE_URL"] = ZAI_CLAUDE_BASE_URL
+        actual_env["ANTHROPIC_AUTH_TOKEN"] = actual_env["ZAI_API_KEY"]
+        actual_env["ANTHROPIC_API_KEY"] = ""
+        actual_env["API_TIMEOUT_MS"] = ZAI_CLAUDE_API_TIMEOUT_MS
+        for key in CLAUDE_OPENROUTER_MODEL_ENV_KEYS:
+            actual_env[key] = model
+    elif provider == "openrouter":
         if not actual_env.get("OPENROUTER_API_KEY"):
             raise HarnessError("OPENROUTER_API_KEY is required when model provider is openrouter")
         routed_model = OPENROUTER_MODEL_ALIASES.get(model, model)
@@ -2015,7 +2033,7 @@ class ClaudeHarness:
             "--append-system-prompt",
             CLAUDE_WORKSPACE_SYSTEM_PROMPT if allow_tools else CLAUDE_GENERATION_SYSTEM_PROMPT,
         ]
-        if provider == "openrouter":
+        if provider in CLAUDE_GATEWAY_PROVIDERS:
             cmd.extend(
                 [
                     "--settings",
@@ -2053,7 +2071,7 @@ class ClaudeHarness:
             else cmd
         )
         timeout_seconds = self.timeout_seconds
-        if provider != "openrouter":
+        if provider not in CLAUDE_GATEWAY_PROVIDERS:
             timeout_seconds = claude_oauth_timeout_seconds(
                 actual_env.get(CLAUDE_OAUTH_EXPIRY_ENV),
                 timeout_seconds,
